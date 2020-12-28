@@ -9,21 +9,6 @@ variable "tags" {
   type        = map(string)
 }
 
-#variable "api_methods" {
-#  default = [ "user:GET:getUser", "user/byemail:GET:getUserByEmail" ]
-#}
-
-#variable "api_methods" {
-#  default = [
-#    {
-#      path_part = "user"
-#      method    = "GET"
-#      lambda = "getUser"
-#    },
-#    {
-#     path_part = "user/byemail"
-#    method    = "GET"
-#    lambda = "getUserByEmail"
-#  }
-#  ]
-#}
+variable "api_methods" {
+  default = ["deleteChoirJoin","deleteChoirSong","deleteChoirSongPart","deleteChoirSongPartName","deleteInvitation","getChoir","getChoirMembers","getChoirSong","getChoirSongPart","getChoirSongParts","getChoirSongs","getInvitation","getInvitationList","getRenderDone","getRender","getUserByEmail","getUserChoirs","getUser","postChoirJoin","postChoir","postChoirSong","postChoirSongPartDownload","postChoirSongPart","postChoirSongPartName","postChoirSongPartUpload","postInvitation","postRender","postUserLogin", "postUser"]
+}
