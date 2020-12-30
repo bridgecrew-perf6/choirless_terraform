@@ -58,7 +58,16 @@ resource "aws_iam_role_policy" "choirlessInlinePolicy" {
             { 
                 "Effect": "Allow", 
                 "Action": [ "lambda:InvokeFunction" ], 
-                "Resource": ["*"] }
+                "Resource": ["*"]
+	    },
+            { 
+                "Effect": "Allow",
+                "Action": [ "s3:Get*",
+            		    "s3:List*",
+                            "s3:*Object"],
+                "Resource": ["${aws_s3_bucket.choirlessRaw.arn}",
+                             "${aws_s3_bucket.choirlessRaw.arn}/*"]
+            }
 
         ]
   }
@@ -97,6 +106,19 @@ resource "aws_lambda_function" "lambda" {
 
 }
 
+resource "aws_lambda_function" "helloWorld" {
+  filename      = "../choirless_lambda/pipeline/helloworld.zip"
+  function_name = "helloWorld"
+  role          = aws_iam_role.choirlessLambdaRole.arn
+  handler       = "helloworld.lambda_handler"
+  runtime       = "python3.8"
+  timeout       = 10
+  source_code_hash = filebase64sha256("../choirless_lambda/pipeline/helloworld.zip")
+
+  tags = var.tags
+
+}
+
 
 # create an API gateway
 resource "aws_api_gateway_rest_api" "choirless_api" {
@@ -125,3 +147,17 @@ resource "aws_api_gateway_deployment" "choirless_api_deployment" {
   stage_name = terraform.workspace
 }
 
+resource "aws_s3_bucket" "choirlessRaw" {
+  #for_each = toset(var.bucket_names)
+  bucket = "choirless-raw-${terraform.workspace}"
+  tags = var.tags
+  
+}
+
+module "raw_trigger" {
+  source ="./modules/trigger"
+  bucket = aws_s3_bucket.choirlessRaw
+  lambda = aws_lambda_function.helloWorld
+  events = ["s3:ObjectCreated:*"]
+
+}
