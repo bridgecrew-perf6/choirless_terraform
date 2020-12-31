@@ -85,6 +85,15 @@ resource "aws_lambda_layer_version" "choirlessAPILambdaLayer" {
 
 }
 
+resource "aws_lambda_layer_version" "choirlessPipelineLambdaLayer" {
+  filename   = "../choirless_lambda/pipeline/ffmpeg.zip"
+  layer_name = "choirlessPipelineLambdaLayer-${terraform.workspace}"
+  source_code_hash = filebase64sha256("../choirless_lambda/pipeline/ffmpeg.zip")
+
+  compatible_runtimes = ["python3.8"]
+
+}
+
 resource "aws_lambda_function" "lambda" {
   for_each = toset(var.api_methods) 
   filename      = "../choirless_lambda/api/${each.key}.zip"
@@ -114,7 +123,7 @@ resource "aws_lambda_function" "helloWorld" {
   runtime       = "python3.8"
   timeout       = 10
   source_code_hash = filebase64sha256("../choirless_lambda/pipeline/helloworld.zip")
-
+  layers = [aws_lambda_layer_version.choirlessPipelineLambdaLayer.arn]
   tags = var.tags
 
 }
@@ -147,17 +156,3 @@ resource "aws_api_gateway_deployment" "choirless_api_deployment" {
   stage_name = terraform.workspace
 }
 
-resource "aws_s3_bucket" "choirlessRaw" {
-  #for_each = toset(var.bucket_names)
-  bucket = "choirless-raw-${terraform.workspace}"
-  tags = var.tags
-  
-}
-
-module "raw_trigger" {
-  source ="./modules/trigger"
-  bucket = aws_s3_bucket.choirlessRaw
-  lambda = aws_lambda_function.helloWorld
-  events = ["s3:ObjectCreated:*"]
-
-}
