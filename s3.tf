@@ -10,6 +10,10 @@ resource "aws_s3_bucket" "choirlessSnapshot" {
   tags = var.tags
 }
 
+resource "aws_s3_bucket" "choirlessConverted" {
+  bucket = "choirless-converted-${terraform.workspace}"
+  tags = var.tags
+}
 
 #triggers for buckets
 module "raw_trigger" {
@@ -17,5 +21,4 @@ module "raw_trigger" {
   bucket = aws_s3_bucket.choirlessRaw
   lambda = aws_lambda_function.snapshot
   events = ["s3:ObjectCreated:*"]
-
 }

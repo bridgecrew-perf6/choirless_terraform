@@ -16,6 +16,13 @@ resource "aws_lambda_layer_version" "choirlessFfmpegLayer" {
   compatible_runtimes = ["python3.8","nodejs12.x"]
 }
 
+resource "aws_lambda_layer_version" "choirlessFfProbeLayer" {
+  filename   = "../choirless_lambda/pipeline/ffprobe.zip"
+  layer_name = "choirlessFfProbeLayer-${terraform.workspace}"
+  source_code_hash = filebase64sha256("../choirless_lambda/pipeline/ffprobe.zip")
+  compatible_runtimes = ["python3.8","nodejs12.x"]
+}
+
 resource "aws_lambda_layer_version" "choirlessPythonLayer" {
   filename   = "../choirless_lambda/pipeline/python.zip"
   layer_name = "choirlessPythonLayer-${terraform.workspace}"
@@ -58,6 +65,23 @@ resource "aws_lambda_function" "snapshot" {
   environment {
     variables = {
       DEST_BUCKET = aws_s3_bucket.choirlessSnapshot.id
+    }
+  }
+  tags = var.tags
+}
+
+resource "aws_lambda_function" "convertFormat" {
+  filename      = "../choirless_lambda/pipeline/convert_format.zip"
+  function_name = "convert_format"
+  role          = aws_iam_role.choirlessLambdaRole.arn
+  handler       = "convert_format.main"
+  runtime       = "python3.8"
+  timeout       = 10
+  source_code_hash = filebase64sha256("../choirless_lambda/pipeline/convert_format.zip")
+  layers = [aws_lambda_layer_version.choirlessFfProbeLayer.arn, aws_lambda_layer_version.choirlessFfmpegLayer.arn, aws_lambda_layer_version.choirlessPythonLayer.arn]
+  environment {
+    variables = {
+      DEST_BUCKET = aws_s3_bucket.choirlessConverted.id
     }
   }
   tags = var.tags
