@@ -10,7 +10,7 @@ variable "tags" {
 }
 
 variable "api_methods" {
-  default = ["postUserLogin","getUser"]
+  default = ["postUserLogin","getUser","postRender"]
 #,"deleteChoirSong","deleteChoirSongPart","deleteChoirSongPartName","deleteInvitation","getChoir","getChoirMembers","getChoirSong","getChoirSongPart","getChoirSongParts","getChoirSongs","getInvitation","getInvitationList","getRenderDone","getRender","getUserByEmail","getUserChoirs","getUser","postChoirJoin","postChoir","postChoirSong","postChoirSongPartDownload","postChoirSongPart","postChoirSongPartName","postChoirSongPartUpload","postInvitation","postRender","postUserLogin", "postUser"]
 }
 
