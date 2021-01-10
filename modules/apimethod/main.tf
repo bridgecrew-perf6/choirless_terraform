@@ -10,6 +10,7 @@ resource "aws_api_gateway_method" "choirless_method" {
   rest_api_id = var.api_id
   resource_id = aws_api_gateway_resource.choirless_resource.id
   http_method = var.api_method
+  api_key_required = true
   authorization = "NONE"
 }
 

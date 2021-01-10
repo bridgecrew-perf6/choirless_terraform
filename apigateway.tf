@@ -25,3 +25,31 @@ resource "aws_api_gateway_deployment" "choirless_api_deployment" {
   stage_name = terraform.workspace
 }
 
+# create an API key
+resource "aws_api_gateway_api_key" "lambdasKey" {
+  name = "lambdasKey-${terraform.workspace}"
+}
+
+output "apikey" {
+  value       = aws_api_gateway_api_key.lambdasKey.value
+  description = "The API key for the API Gateway"
+}
+
+output "apiurl" {
+  value       = aws_api_gateway_deployment.choirless_api_deployment.invoke_url
+  description = "The API URL"
+}
+
+resource "aws_api_gateway_usage_plan" "choirlessUsagePlan" {
+  name         = "choirlessplan-${terraform.workspace}"
+  api_stages {
+    api_id = aws_api_gateway_rest_api.choirless_api.id
+    stage  = aws_api_gateway_deployment.choirless_api_deployment.stage_name
+  }
+}
+
+resource "aws_api_gateway_usage_plan_key" "choirlessUsagePlanKey" {
+  key_id        = aws_api_gateway_api_key.lambdasKey.id
+  key_type      = "API_KEY"
+  usage_plan_id = aws_api_gateway_usage_plan.choirlessUsagePlan.id
+}

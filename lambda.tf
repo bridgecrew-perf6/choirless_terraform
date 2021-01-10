@@ -71,6 +71,7 @@ resource "aws_lambda_function" "snapshot" {
     variables = {
       DEST_BUCKET = aws_s3_bucket.choirlessSnapshot.id
       STATUS_LAMBDA = aws_lambda_function.status.function_name
+      CONVERT_LAMBDA = aws_lambda_function.convertFormat.function_name
     }
   }
   tags = var.tags
@@ -89,12 +90,14 @@ resource "aws_lambda_function" "convertFormat" {
   role          = aws_iam_role.choirlessLambdaRole.arn
   handler       = "convert_format.main"
   runtime       = "python3.8"
-  timeout       = 10
+  memory_size = 2048
+  timeout       = 60
   source_code_hash = filebase64sha256("../choirless_lambda/pipeline/convert_format.zip")
   layers = [aws_lambda_layer_version.choirlessFfProbeLayer.arn, aws_lambda_layer_version.choirlessFfmpegLayer.arn, aws_lambda_layer_version.choirlessPythonLayer.arn]
   environment {
     variables = {
       DEST_BUCKET = aws_s3_bucket.choirlessConverted.id
+      STATUS_LAMBDA = aws_lambda_function.status.function_name
     }
   }
   tags = var.tags
@@ -119,6 +122,7 @@ resource "aws_lambda_function" "status" {
   environment {
     variables = {
       CHOIRLESS_API_URL = aws_api_gateway_deployment.choirless_api_deployment.invoke_url
+      CHOIRLESS_API_KEY = aws_api_gateway_api_key.lambdasKey.value
     }
   }
   tags = var.tags
