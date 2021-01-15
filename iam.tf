@@ -55,6 +55,8 @@ resource "aws_iam_role_policy" "choirlessInlinePolicy" {
                              "${aws_s3_bucket.choirlessSnapshot.arn}/*",
 			     "${aws_s3_bucket.choirlessDefinition.arn}",
                              "${aws_s3_bucket.choirlessDefinition.arn}/*",
+			     "${aws_s3_bucket.choirlessFinalParts.arn}",
+                             "${aws_s3_bucket.choirlessFinalParts.arn}/*",
 			     "${aws_s3_bucket.choirlessConverted.arn}",
                              "${aws_s3_bucket.choirlessConverted.arn}/*"
 			    ]

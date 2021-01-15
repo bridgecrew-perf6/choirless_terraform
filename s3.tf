@@ -20,6 +20,11 @@ resource "aws_s3_bucket" "choirlessDefinition" {
   tags = var.tags
 }
 
+resource "aws_s3_bucket" "choirlessFinalParts" {
+  bucket = "choirless-final-parts-${terraform.workspace}"
+  tags = var.tags
+}
+
 
 #triggers for buckets
 module "raw_trigger" {
@@ -33,5 +38,12 @@ module "converted_trigger" {
   source ="./modules/trigger"
   bucket = aws_s3_bucket.choirlessConverted
   lambda = aws_lambda_function.calculateAlignment
+  events = ["s3:ObjectCreated:*"]
+}
+
+module "definition_trigger" {
+  source ="./modules/trigger"
+  bucket = aws_s3_bucket.choirlessDefinition
+  lambda = aws_lambda_function.rendererCompositorMain
   events = ["s3:ObjectCreated:*"]
 }

@@ -158,6 +158,32 @@ resource "aws_lambda_function_event_invoke_config" "calculateAlignmentInvokeConf
   maximum_retry_attempts       = 0
 }
 
+resource "aws_lambda_function" "compositorChild" {
+  filename      = "../choirless_lambda/pipeline/renderer_compositor_child.zip"
+  function_name = "renderer_compositor_child-${terraform.workspace}"
+  role          = aws_iam_role.choirlessLambdaRole.arn
+  handler       = "renderer_compositor_child.main"
+  runtime       = "python3.8"
+  timeout       = 10
+  source_code_hash = filebase64sha256("../choirless_lambda/pipeline/renderer_compositor_child.zip")
+  layers = [aws_lambda_layer_version.choirlessPythonLayer.arn]
+  environment {
+    variables = {
+      STATUS_LAMBDA = aws_lambda_function.status.function_name
+      SRC_BUCKET = aws_s3_bucket.choirlessConverted.id
+      DEST_BUCKET = aws_s3_bucket.choirlessFinalParts.id
+
+    }
+  }
+  tags = var.tags
+}
+
+# If the lambda invocation fails don't keep trying
+resource "aws_lambda_function_event_invoke_config" "compositorChildInvokeConfig" {
+  function_name                = aws_lambda_function.compositorChild.function_name
+  maximum_retry_attempts       = 0
+}
+
 resource "aws_lambda_function" "renderer" {
   filename      = "../choirless_lambda/pipeline/renderer.zip"
   function_name = "renderer-${terraform.workspace}"
@@ -181,6 +207,30 @@ resource "aws_lambda_function" "renderer" {
 # If the lambda invocation fails don't keep trying
 resource "aws_lambda_function_event_invoke_config" "rendererInvokeConfig" {
   function_name                = aws_lambda_function.renderer.function_name
+  maximum_retry_attempts       = 0
+}
+
+# renderer_compositor_main
+resource "aws_lambda_function" "rendererCompositorMain" {
+  filename      = "../choirless_lambda/pipeline/renderer_compositor_main.zip"
+  function_name = "renderer_compositor_main-${terraform.workspace}"
+  role          = aws_iam_role.choirlessLambdaRole.arn
+  handler       = "renderer_compositor_main.handler"
+  runtime       = "nodejs12.x"
+  timeout       = 10
+  source_code_hash = filebase64sha256("../choirless_lambda/pipeline/renderer_compositor_main.zip")
+  layers = [aws_lambda_layer_version.choirlessAPILambdaLayer.arn]
+  environment {
+    variables = {
+      COMPOSITOR_CHILD_LAMBDA = aws_lambda_function.compositorChild.function_name
+    }
+  }
+  tags = var.tags
+}
+
+# If the lambda invocation fails don't keep trying
+resource "aws_lambda_function_event_invoke_config" "rendererCompositorMainInvokeConfig" {
+  function_name                = aws_lambda_function.rendererCompositorMain.function_name
   maximum_retry_attempts       = 0
 }
 
