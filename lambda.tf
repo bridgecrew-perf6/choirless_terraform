@@ -184,6 +184,31 @@ resource "aws_lambda_function_event_invoke_config" "compositorChildInvokeConfig"
   maximum_retry_attempts       = 0
 }
 
+resource "aws_lambda_function" "rawConvert" {
+  filename      = "../choirless_lambda/pipeline/rawConvert.zip"
+  function_name = "rawConvert-${terraform.workspace}"
+  role          = aws_iam_role.choirlessLambdaRole.arn
+  handler       = "rawConvert.handler"
+  runtime       = "nodejs12.x"
+  timeout       = 10
+  source_code_hash = filebase64sha256("../choirless_lambda/pipeline/rawConvert.zip")
+  layers = [aws_lambda_layer_version.choirlessAPILambdaLayer.arn]
+  environment {
+    variables = {
+      STATUS_LAMBDA = aws_lambda_function.status.function_name
+      PIPELINE_ID = aws_elastictranscoder_pipeline.rawPipeline.id
+      PRESET_ID = aws_elastictranscoder_preset.rawPreset.id
+    }
+  }
+  tags = var.tags
+}
+
+# If the lambda invocation fails don't keep trying
+resource "aws_lambda_function_event_invoke_config" "rawConverInvokeConfig" {
+  function_name                = aws_lambda_function.rawConvert.function_name
+  maximum_retry_attempts       = 0
+}
+
 resource "aws_lambda_function" "renderer" {
   filename      = "../choirless_lambda/pipeline/renderer.zip"
   function_name = "renderer-${terraform.workspace}"

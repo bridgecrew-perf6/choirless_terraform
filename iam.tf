@@ -60,10 +60,52 @@ resource "aws_iam_role_policy" "choirlessInlinePolicy" {
 			     "${aws_s3_bucket.choirlessConverted.arn}",
                              "${aws_s3_bucket.choirlessConverted.arn}/*"
 			    ]
+            },
+            {
+            "Action": [
+                "elastictranscoder:Read*",
+                "elastictranscoder:List*",
+                "elastictranscoder:*Job",
+                "elastictranscoder:*Preset",
+                "s3:ListAllMyBuckets",
+                "s3:ListBucket",
+                "iam:ListRoles",
+                "sns:ListTopics"
+            ],
+            "Effect": "Allow",
+            "Resource": "*"
             }
+      
 
         ]
   }
   EOF
 }
 
+resource "aws_iam_role" "choirlessTranscoderRole" {
+  name = "choirlessTranscoderRole-${terraform.workspace}"
+
+  assume_role_policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Action": "sts:AssumeRole",
+      "Principal": {
+        "Service": "elastictranscoder.amazonaws.com"
+      },
+      "Effect": "Allow",
+      "Sid": ""
+    }
+  ]
+}
+EOF
+
+  tags = var.tags
+}
+
+resource "aws_iam_role_policy_attachment" "elasticTranscoderPolicy" {
+
+   role = aws_iam_role.choirlessTranscoderRole.name
+   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonElasticTranscoderRole"
+}
