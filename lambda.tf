@@ -164,9 +164,10 @@ resource "aws_lambda_function" "compositorChild" {
   role          = aws_iam_role.choirlessLambdaRole.arn
   handler       = "renderer_compositor_child.main"
   runtime       = "python3.8"
-  timeout       = 10
+  timeout       = 300
+  memory_size   = 1024
   source_code_hash = filebase64sha256("../choirless_lambda/pipeline/renderer_compositor_child.zip")
-  layers = [aws_lambda_layer_version.choirlessPythonLayer.arn]
+  layers = [aws_lambda_layer_version.choirlessPythonLayer.arn, aws_lambda_layer_version.choirlessFfmpegLayer.arn]
   environment {
     variables = {
       STATUS_LAMBDA = aws_lambda_function.status.function_name

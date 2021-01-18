@@ -22,6 +22,14 @@ resource "aws_s3_bucket" "choirlessDefinition" {
 
 resource "aws_s3_bucket" "choirlessFinalParts" {
   bucket = "choirless-final-parts-${terraform.workspace}"
+  lifecycle_rule {
+    id = "self-clean"
+    enabled = true
+    expiration {
+      days = 2
+    }
+  }
+
   tags = var.tags
 }
 
