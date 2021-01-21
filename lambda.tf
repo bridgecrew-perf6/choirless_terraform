@@ -92,7 +92,7 @@ resource "aws_lambda_function" "convertFormat" {
   handler       = "convert_format.main"
   runtime       = "python3.8"
   memory_size = 2048
-  timeout       = 60
+  timeout       = 300
   source_code_hash = filebase64sha256("../choirless_lambda/pipeline/convert_format.zip")
   layers = [aws_lambda_layer_version.choirlessFfProbeLayer.arn, aws_lambda_layer_version.choirlessFfmpegLayer.arn, aws_lambda_layer_version.choirlessPythonLayer.arn]
   environment {
