@@ -185,6 +185,32 @@ resource "aws_lambda_function_event_invoke_config" "compositorChildInvokeConfig"
   maximum_retry_attempts       = 0
 }
 
+resource "aws_lambda_function" "rendererFinal" {
+  filename      = "../choirless_lambda/pipeline/renderer_final.zip"
+  function_name = "renderer_final-${terraform.workspace}"
+  role          = aws_iam_role.choirlessLambdaRole.arn
+  handler       = "renderer_final.main"
+  runtime       = "python3.8"
+  timeout       = 300
+  memory_size   = 1024
+  source_code_hash = filebase64sha256("../choirless_lambda/pipeline/renderer_final.zip")
+  layers = [aws_lambda_layer_version.choirlessPythonLayer.arn, aws_lambda_layer_version.choirlessFfmpegLayer.arn]
+  environment {
+    variables = {
+      STATUS_LAMBDA = aws_lambda_function.status.function_name
+      SRC_BUCKET = aws_s3_bucket.choirlessFinalParts.id
+      DEST_BUCKET = aws_s3_bucket.choirlessPreview.id
+    }
+  }
+  tags = var.tags
+}
+
+# If the lambda invocation fails don't keep trying
+resource "aws_lambda_function_event_invoke_config" "rendererFinalInvokeConfig" {
+  function_name                = aws_lambda_function.rendererFinal.function_name
+  maximum_retry_attempts       = 0
+}
+
 resource "aws_lambda_function" "rawConvert" {
   filename      = "../choirless_lambda/pipeline/rawConvert.zip"
   function_name = "rawConvert-${terraform.workspace}"

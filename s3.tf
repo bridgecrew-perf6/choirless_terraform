@@ -20,6 +20,11 @@ resource "aws_s3_bucket" "choirlessDefinition" {
   tags = var.tags
 }
 
+resource "aws_s3_bucket" "choirlessPreview" {
+  bucket = "choirless-preview-${terraform.workspace}"
+  tags = var.tags
+}
+
 resource "aws_s3_bucket" "choirlessFinalParts" {
   bucket = "choirless-final-parts-${terraform.workspace}"
   lifecycle_rule {
@@ -53,5 +58,12 @@ module "definition_trigger" {
   source ="./modules/trigger"
   bucket = aws_s3_bucket.choirlessDefinition
   lambda = aws_lambda_function.rendererCompositorMain
+  events = ["s3:ObjectCreated:*"]
+}
+
+module "final_parts_trigger" {
+  source ="./modules/trigger"
+  bucket = aws_s3_bucket.choirlessFinalParts
+  lambda = aws_lambda_function.rendererFinal
   events = ["s3:ObjectCreated:*"]
 }
