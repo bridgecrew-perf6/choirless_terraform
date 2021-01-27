@@ -76,8 +76,16 @@ resource "aws_iam_role_policy" "choirlessInlinePolicy" {
             ],
             "Effect": "Allow",
             "Resource": "*"
+            },
+            {
+            "Effect": "Allow",
+            "Action": [
+                "ec2:CreateNetworkInterface",
+                "ec2:DeleteNetworkInterface",
+                "ec2:DescribeNetworkInterfaces"
+            ],
+            "Resource": "*"
             }
-      
 
         ]
   }
@@ -110,4 +118,37 @@ resource "aws_iam_role_policy_attachment" "elasticTranscoderPolicy" {
 
    role = aws_iam_role.choirlessTranscoderRole.name
    policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonElasticTranscoderRole"
+}
+
+
+#this policy grants access to mount and write to the EFS file system
+
+resource "aws_efs_file_system_policy" "choirlessEFSPolicy" {
+  file_system_id = aws_efs_file_system.choirlessEFS.id
+
+  policy = <<POLICY
+{
+    "Version": "2012-10-17",
+    "Id": "choirlessEFSPolicy",
+    "Statement": [
+        {
+            "Sid": "Statement01",
+            "Effect": "Allow",
+            "Principal": {
+                "AWS": "*"
+            },
+            "Resource": "${aws_efs_file_system.choirlessEFS.arn}",
+            "Action": [
+                "elasticfilesystem:ClientMount",
+                "elasticfilesystem:ClientWrite"
+            ],
+            "Condition": {
+                "Bool": {
+                    "aws:SecureTransport": "true"
+                }
+            }
+        }
+    ]
+}
+POLICY
 }

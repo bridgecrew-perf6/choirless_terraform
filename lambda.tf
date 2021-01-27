@@ -57,7 +57,8 @@ resource "aws_lambda_function" "lambda" {
 
 ##Note to future selves: Do NOT try to make these lambda functions with a for loop
 ## Have tried it before and run into problems. So just keep cutting and pasting!!!
-
+## Also note: Lambda functions that have a vpc_config element are ones that exist inside a VPC,
+## which gives them access to the EFS file system to process large files
 
 resource "aws_lambda_function" "snapshot" {
   filename      = "../choirless_lambda/pipeline/snapshot.zip"
@@ -94,6 +95,18 @@ resource "aws_lambda_function" "convertFormat" {
   memory_size = 2048
   timeout       = 300
   source_code_hash = filebase64sha256("../choirless_lambda/pipeline/convert_format.zip")
+
+  file_system_config {
+    arn = aws_efs_access_point.choirlessEFSAP.arn
+    local_mount_path = "/mnt/tmp"
+  }
+
+  vpc_config  {
+    subnet_ids = [aws_subnet.choirlessEFSSubnet1.id, aws_subnet.choirlessEFSSubnet2.id]
+    security_group_ids = [aws_vpc.choirlessEFSVPC.default_security_group_id]
+  }
+
+  depends_on = [aws_efs_mount_target.choirlessEFSMount1, aws_efs_mount_target.choirlessEFSMount2]
   layers = [aws_lambda_layer_version.choirlessFfProbeLayer.arn, aws_lambda_layer_version.choirlessFfmpegLayer.arn, aws_lambda_layer_version.choirlessPythonLayer.arn]
   environment {
     variables = {
@@ -167,6 +180,18 @@ resource "aws_lambda_function" "compositorChild" {
   timeout       = 300
   memory_size   = 1024
   source_code_hash = filebase64sha256("../choirless_lambda/pipeline/renderer_compositor_child.zip")
+  file_system_config {
+    arn = aws_efs_access_point.choirlessEFSAP.arn
+    local_mount_path = "/mnt/tmp"
+  }
+
+  vpc_config  {
+    subnet_ids = [aws_subnet.choirlessEFSSubnet1.id, aws_subnet.choirlessEFSSubnet2.id]
+    security_group_ids = [aws_vpc.choirlessEFSVPC.default_security_group_id]
+  }
+
+  depends_on = [aws_efs_mount_target.choirlessEFSMount1, aws_efs_mount_target.choirlessEFSMount2]
+
   layers = [aws_lambda_layer_version.choirlessPythonLayer.arn, aws_lambda_layer_version.choirlessFfmpegLayer.arn]
   environment {
     variables = {
@@ -194,6 +219,19 @@ resource "aws_lambda_function" "rendererFinal" {
   timeout       = 300
   memory_size   = 1024
   source_code_hash = filebase64sha256("../choirless_lambda/pipeline/renderer_final.zip")
+
+  file_system_config {
+    arn = aws_efs_access_point.choirlessEFSAP.arn
+    local_mount_path = "/mnt/tmp"
+  }
+
+  vpc_config  {
+    subnet_ids = [aws_subnet.choirlessEFSSubnet1.id, aws_subnet.choirlessEFSSubnet2.id]
+    security_group_ids = [aws_vpc.choirlessEFSVPC.default_security_group_id]
+  }
+
+  depends_on = [aws_efs_mount_target.choirlessEFSMount1, aws_efs_mount_target.choirlessEFSMount2]
+
   layers = [aws_lambda_layer_version.choirlessPythonLayer.arn, aws_lambda_layer_version.choirlessFfmpegLayer.arn]
   environment {
     variables = {
@@ -285,4 +323,3 @@ resource "aws_lambda_function_event_invoke_config" "rendererCompositorMainInvoke
   function_name                = aws_lambda_function.rendererCompositorMain.function_name
   maximum_retry_attempts       = 0
 }
-
