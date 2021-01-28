@@ -17,3 +17,8 @@ variable "api_methods" {
 variable "bucket_names" {
   default = ["choirless-raw","choirless-snapshot"]
 }
+
+variable "mount_path"  {
+   description = "Mount path for the EFS system"
+   default = "/mnt/tmp"
+}

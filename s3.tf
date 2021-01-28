@@ -25,6 +25,16 @@ resource "aws_s3_bucket" "choirlessPreview" {
   tags = var.tags
 }
 
+resource "aws_s3_bucket" "choirlessMisc" {
+  bucket = "choirless-misc-${terraform.workspace}"
+  tags = var.tags
+}
+
+resource "aws_s3_bucket" "choirlessFinal" {
+  bucket = "choirless-final-${terraform.workspace}"
+  tags = var.tags
+}
+
 resource "aws_s3_bucket" "choirlessFinalParts" {
   bucket = "choirless-final-parts-${terraform.workspace}"
   lifecycle_rule {
@@ -66,4 +76,21 @@ module "final_parts_trigger" {
   bucket = aws_s3_bucket.choirlessFinalParts
   lambda = aws_lambda_function.rendererFinal
   events = ["s3:ObjectCreated:*"]
+}
+
+module "preview_trigger" {
+  source ="./modules/trigger"
+  bucket = aws_s3_bucket.choirlessPreview
+  lambda = aws_lambda_function.postProduction
+  events = ["s3:ObjectCreated:*"]
+}
+
+
+## upload files to the misc s3 from local misc directory
+resource "aws_s3_bucket_object" "object1" {
+  for_each = fileset("miscbucket/", "*")
+  bucket = aws_s3_bucket.choirlessMisc.id
+  key = each.value
+  source = "miscbucket/${each.value}"
+  etag = filemd5("miscbucket/${each.value}")
 }
