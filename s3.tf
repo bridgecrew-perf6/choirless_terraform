@@ -5,33 +5,25 @@ resource "aws_s3_bucket" "choirlessRaw" {
   tags = var.tags
 }
 
-resource "aws_s3_bucket" "choirlessSnapshot" {
-  bucket = "choirless-snapshot-${terraform.workspace}"
-  tags = var.tags
-}
-
 resource "aws_s3_bucket" "choirlessConverted" {
   bucket = "choirless-converted-${terraform.workspace}"
   tags = var.tags
 }
 
+resource "aws_s3_bucket" "choirlessSnapshot" {
+  bucket = "choirless-snapshot-${terraform.workspace}"
+  tags = var.tags
+}
+
 resource "aws_s3_bucket" "choirlessDefinition" {
   bucket = "choirless-definition-${terraform.workspace}"
-  tags = var.tags
-}
-
-resource "aws_s3_bucket" "choirlessPreview" {
-  bucket = "choirless-preview-${terraform.workspace}"
-  tags = var.tags
-}
-
-resource "aws_s3_bucket" "choirlessMisc" {
-  bucket = "choirless-misc-${terraform.workspace}"
-  tags = var.tags
-}
-
-resource "aws_s3_bucket" "choirlessFinal" {
-  bucket = "choirless-final-${terraform.workspace}"
+  lifecycle_rule {
+    id = "self-clean"
+    enabled = true
+    expiration {
+      days = 1
+    }
+  }
   tags = var.tags
 }
 
@@ -41,12 +33,36 @@ resource "aws_s3_bucket" "choirlessFinalParts" {
     id = "self-clean"
     enabled = true
     expiration {
-      days = 2
+      days = 1
+    }
+  }
+  tags = var.tags
+}
+
+resource "aws_s3_bucket" "choirlessPreview" {
+  bucket = "choirless-preview-${terraform.workspace}"
+  lifecycle_rule {
+    id = "self-clean"
+    enabled = true
+    expiration {
+      days = 1
     }
   }
 
   tags = var.tags
 }
+
+resource "aws_s3_bucket" "choirlessFinal" {
+  bucket = "choirless-final-${terraform.workspace}"
+  tags = var.tags
+}
+
+resource "aws_s3_bucket" "choirlessMisc" {
+  bucket = "choirless-misc-${terraform.workspace}"
+  tags = var.tags
+}
+
+
 
 
 #triggers for buckets
