@@ -84,7 +84,7 @@ resource "aws_lambda_function" "rendererFinal" {
   handler       = "renderer_final.main"
   runtime       = "python3.8"
   timeout       = 300
-  memory_size   = 1024
+  memory_size   = 2048
   source_code_hash = filebase64sha256("../choirless_lambda/pipeline/renderer_final.zip")
 
   file_system_config {
@@ -125,7 +125,7 @@ resource "aws_lambda_function" "postProduction" {
   handler       = "post_production.main"
   runtime       = "python3.8"
   timeout       = 300
-  memory_size   = 1024
+  memory_size   = 2048
   source_code_hash = filebase64sha256("../choirless_lambda/pipeline/post_production.zip")
 
   file_system_config {

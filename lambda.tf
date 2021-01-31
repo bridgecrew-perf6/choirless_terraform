@@ -85,6 +85,35 @@ resource "aws_lambda_function_event_invoke_config" "snapshotInvokeConfig" {
   maximum_retry_attempts       = 0
 }
 
+resource "aws_cloudwatch_log_group" "snapshotLG" {
+  name =  "/aws/lambda/${aws_lambda_function.snapshot.function_name}"
+  retention_in_days = 7
+}
+
+
+resource "aws_lambda_function" "snapshotFinal" {
+  filename      = "../choirless_lambda/pipeline/snapshot_final.zip"
+  function_name = "snapshot_final-${terraform.workspace}"
+  role          = aws_iam_role.choirlessLambdaRole.arn
+  handler       = "snapshot_final.main"
+  runtime       = "python3.8"
+  timeout       = 10
+  source_code_hash = filebase64sha256("../choirless_lambda/pipeline/snapshot_final.zip")
+  layers = [aws_lambda_layer_version.choirlessFfmpegLayer.arn, aws_lambda_layer_version.choirlessPythonLayer.arn]
+  environment {
+    variables = {
+      DEST_BUCKET = aws_s3_bucket.choirlessSnapshot.id
+    }
+  }
+  tags = var.tags
+}
+
+# If the lambda invocation fails don't keep trying
+resource "aws_lambda_function_event_invoke_config" "snapshotFinalInvokeConfig" {
+  function_name                = aws_lambda_function.snapshotFinal.function_name
+  maximum_retry_attempts       = 0
+}
+
 
 resource "aws_lambda_function" "status" {
   filename      = "../choirless_lambda/pipeline/status.zip"

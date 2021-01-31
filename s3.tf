@@ -101,6 +101,13 @@ module "preview_trigger" {
   events = ["s3:ObjectCreated:*"]
 }
 
+module "final_trigger" {
+  source ="./modules/trigger"
+  bucket = aws_s3_bucket.choirlessFinal
+  lambda = aws_lambda_function.snapshotFinal
+  events = ["s3:ObjectCreated:*"]
+}
+
 
 ## upload files to the misc s3 from local misc directory
 resource "aws_s3_bucket_object" "object1" {
