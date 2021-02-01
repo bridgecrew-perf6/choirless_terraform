@@ -60,36 +60,19 @@ resource "aws_lambda_function" "lambda" {
 ## Also note: Lambda functions that have a vpc_config element are ones that exist inside a VPC,
 ## which gives them access to the EFS file system to process large files
 
-resource "aws_lambda_function" "snapshot" {
-  filename      = "../choirless_lambda/pipeline/snapshot.zip"
-  function_name = "snapshot-${terraform.workspace}"
-  role          = aws_iam_role.choirlessLambdaRole.arn
-  handler       = "snapshot.main"
-  runtime       = "python3.8"
-  timeout       = 10
-  source_code_hash = filebase64sha256("../choirless_lambda/pipeline/snapshot.zip")
+
+module "snapshot_lambda" {
+  source = "./modules/lambdaPackage"
+  filename = "snapshot"
+  role = aws_iam_role.choirlessLambdaRole.arn
   layers = [aws_lambda_layer_version.choirlessFfmpegLayer.arn, aws_lambda_layer_version.choirlessPythonLayer.arn]
-  environment {
-    variables = {
+  env_variables = {      
       DEST_BUCKET = aws_s3_bucket.choirlessSnapshot.id
       STATUS_LAMBDA = aws_lambda_function.status.function_name
-      CONVERT_LAMBDA = aws_lambda_function.convertFormat.function_name
-    }
+      CONVERT_LAMBDA = module.convert_format_lambda.lambdaObject.function_name
   }
   tags = var.tags
 }
-
-# If the lambda invocation fails don't keep trying
-resource "aws_lambda_function_event_invoke_config" "snapshotInvokeConfig" {
-  function_name                = aws_lambda_function.snapshot.function_name
-  maximum_retry_attempts       = 0
-}
-
-resource "aws_cloudwatch_log_group" "snapshotLG" {
-  name =  "/aws/lambda/${aws_lambda_function.snapshot.function_name}"
-  retention_in_days = 7
-}
-
 
 resource "aws_lambda_function" "snapshotFinal" {
   filename      = "../choirless_lambda/pipeline/snapshot_final.zip"

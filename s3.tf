@@ -69,7 +69,7 @@ resource "aws_s3_bucket" "choirlessMisc" {
 module "raw_trigger" {
   source ="./modules/trigger"
   bucket = aws_s3_bucket.choirlessRaw
-  lambda = aws_lambda_function.snapshot
+  lambda = module.snapshot_lambda.lambdaObject
   events = ["s3:ObjectCreated:*"]
 }
 
