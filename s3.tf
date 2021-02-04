@@ -76,14 +76,14 @@ module "raw_trigger" {
 module "converted_trigger" {
   source ="./modules/trigger"
   bucket = aws_s3_bucket.choirlessConverted
-  lambda = aws_lambda_function.calculateAlignment
+  lambda = module.calculate_alignment_lambda.lambdaObject
   events = ["s3:ObjectCreated:*"]
 }
 
 module "definition_trigger" {
   source ="./modules/trigger"
   bucket = aws_s3_bucket.choirlessDefinition
-  lambda = aws_lambda_function.rendererCompositorMain
+  lambda = module.renderer_compositor_main_lambda.lambdaObject
   events = ["s3:ObjectCreated:*"]
 }
 
@@ -104,7 +104,7 @@ module "preview_trigger" {
 module "final_trigger" {
   source ="./modules/trigger"
   bucket = aws_s3_bucket.choirlessFinal
-  lambda = aws_lambda_function.snapshotFinal
+  lambda = module.snapshot_final_lambda.lambdaObject
   events = ["s3:ObjectCreated:*"]
 }
 

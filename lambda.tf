@@ -1,36 +1,5 @@
 
-#create the nodejs layer for the API
-resource "aws_lambda_layer_version" "choirlessAPILambdaLayer" {
-  filename   = "../choirless_lambda/api/choirless_layer.zip"
-  layer_name = "choirlessAPILambdaLayer-${terraform.workspace}"
-  source_code_hash = filebase64sha256("../choirless_lambda/api/choirless_layer.zip")
-
-  compatible_runtimes = ["nodejs12.x"]
-
-}
-
-resource "aws_lambda_layer_version" "choirlessFfmpegLayer" {
-  filename   = "../choirless_lambda/pipeline/ffmpeg.zip"
-  layer_name = "choirlessFfmpegLayer-${terraform.workspace}"
-  source_code_hash = filebase64sha256("../choirless_lambda/pipeline/ffmpeg.zip")
-  compatible_runtimes = ["python3.8","nodejs12.x"]
-}
-
-resource "aws_lambda_layer_version" "choirlessFfProbeLayer" {
-  filename   = "../choirless_lambda/pipeline/ffprobe.zip"
-  layer_name = "choirlessFfProbeLayer-${terraform.workspace}"
-  source_code_hash = filebase64sha256("../choirless_lambda/pipeline/ffprobe.zip")
-  compatible_runtimes = ["python3.8","nodejs12.x"]
-}
-
-resource "aws_lambda_layer_version" "choirlessPythonLayer" {
-  filename   = "../choirless_lambda/pipeline/python.zip"
-  layer_name = "choirlessPythonLayer-${terraform.workspace}"
-  source_code_hash = filebase64sha256("../choirless_lambda/pipeline/python.zip")
-  compatible_runtimes = ["python3.8"]
-}
-
-
+// lambda functions that power the API
 resource "aws_lambda_function" "lambda" {
   for_each = toset(var.api_methods) 
   filename      = "../choirless_lambda/api/${each.key}.zip"
@@ -61,6 +30,7 @@ resource "aws_lambda_function" "lambda" {
 ## which gives them access to the EFS file system to process large files
 
 
+# snapshot
 module "snapshot_lambda" {
   source = "./modules/lambdaPackage"
   filename = "snapshot"
@@ -68,129 +38,59 @@ module "snapshot_lambda" {
   layers = [aws_lambda_layer_version.choirlessFfmpegLayer.arn, aws_lambda_layer_version.choirlessPythonLayer.arn]
   env_variables = {      
       DEST_BUCKET = aws_s3_bucket.choirlessSnapshot.id
-      STATUS_LAMBDA = aws_lambda_function.status.function_name
       CONVERT_LAMBDA = module.convert_format_lambda.lambdaObject.function_name
   }
   tags = var.tags
 }
 
-resource "aws_lambda_function" "snapshotFinal" {
-  filename      = "../choirless_lambda/pipeline/snapshot_final.zip"
-  function_name = "snapshot_final-${terraform.workspace}"
+# snapshot_final
+module "snapshot_final_lambda" {
+  source        = "./modules/lambdaPackage"
+  filename      = "snapshot_final"
   role          = aws_iam_role.choirlessLambdaRole.arn
-  handler       = "snapshot_final.main"
-  runtime       = "python3.8"
-  timeout       = 10
-  source_code_hash = filebase64sha256("../choirless_lambda/pipeline/snapshot_final.zip")
-  layers = [aws_lambda_layer_version.choirlessFfmpegLayer.arn, aws_lambda_layer_version.choirlessPythonLayer.arn]
-  environment {
-    variables = {
+  layers        = [aws_lambda_layer_version.choirlessFfmpegLayer.arn, aws_lambda_layer_version.choirlessPythonLayer.arn]
+  env_variables = {      
       DEST_BUCKET = aws_s3_bucket.choirlessSnapshot.id
-    }
   }
   tags = var.tags
 }
 
-# If the lambda invocation fails don't keep trying
-resource "aws_lambda_function_event_invoke_config" "snapshotFinalInvokeConfig" {
-  function_name                = aws_lambda_function.snapshotFinal.function_name
-  maximum_retry_attempts       = 0
-}
-
-
-resource "aws_lambda_function" "status" {
-  filename      = "../choirless_lambda/pipeline/status.zip"
-  function_name = "status-${terraform.workspace}"
+# calculate_alignment
+module "calculate_alignment_lambda" {
+  source        = "./modules/lambdaPackage"
+  filename      = "calculate_alignment"
   role          = aws_iam_role.choirlessLambdaRole.arn
-  handler       = "status.main"
-  runtime       = "python3.8"
-  timeout       = 10
-  source_code_hash = filebase64sha256("../choirless_lambda/pipeline/status.zip")
-  layers = [aws_lambda_layer_version.choirlessPythonLayer.arn]
-  environment {
-    variables = {
-      CHOIRLESS_API_URL = aws_api_gateway_deployment.choirless_api_deployment.invoke_url
-      CHOIRLESS_API_KEY = aws_api_gateway_api_key.lambdasKey.value
-    }
+  layers        = [aws_lambda_layer_version.choirlessPythonLayer.arn]
+  env_variables = {      
+      RENDERER_LAMBDA = module.renderer_lambda.lambdaObject.function_name
   }
   tags = var.tags
 }
 
-# If the lambda invocation fails don't keep trying
-resource "aws_lambda_function_event_invoke_config" "statusInvokeConfig" {
-  function_name                = aws_lambda_function.status.function_name
-  maximum_retry_attempts       = 0
-}
-
-resource "aws_lambda_function" "calculateAlignment" {
-  filename      = "../choirless_lambda/pipeline/calculate_alignment.zip"
-  function_name = "calculate_alignment-${terraform.workspace}"
+# renderer
+module "renderer_lambda" {
+  source        = "./modules/lambdaPackage"
+  filename      = "renderer"
   role          = aws_iam_role.choirlessLambdaRole.arn
-  handler       = "calculate_alignment.main"
-  runtime       = "python3.8"
-  timeout       = 10
-  source_code_hash = filebase64sha256("../choirless_lambda/pipeline/calculate_alignment.zip")
-  layers = [aws_lambda_layer_version.choirlessPythonLayer.arn]
-  environment {
-    variables = {
-      RENDERER_LAMBDA = aws_lambda_function.renderer.function_name
-    }
-  }
-  tags = var.tags
-}
-
-# If the lambda invocation fails don't keep trying
-resource "aws_lambda_function_event_invoke_config" "calculateAlignmentInvokeConfig" {
-  function_name                = aws_lambda_function.calculateAlignment.function_name
-  maximum_retry_attempts       = 0
-}
-
-resource "aws_lambda_function" "renderer" {
-  filename      = "../choirless_lambda/pipeline/renderer.zip"
-  function_name = "renderer-${terraform.workspace}"
-  role          = aws_iam_role.choirlessLambdaRole.arn
-  handler       = "renderer.handler"
   runtime       = "nodejs12.x"
-  timeout       = 10
-  source_code_hash = filebase64sha256("../choirless_lambda/pipeline/renderer.zip")
-  layers = [aws_lambda_layer_version.choirlessAPILambdaLayer.arn]
-  environment {
-    variables = {
-      STATUS_LAMBDA = aws_lambda_function.status.function_name
+  layers        = [aws_lambda_layer_version.choirlessAPILambdaLayer.arn]
+  env_variables = {      
       DEST_BUCKET = aws_s3_bucket.choirlessDefinition.id
       CHOIRLESS_API_KEY = aws_api_gateway_api_key.lambdasKey.value
       CHOIRLESS_API_URL = aws_api_gateway_deployment.choirless_api_deployment.invoke_url
-    }
   }
   tags = var.tags
-}
-
-# If the lambda invocation fails don't keep trying
-resource "aws_lambda_function_event_invoke_config" "rendererInvokeConfig" {
-  function_name                = aws_lambda_function.renderer.function_name
-  maximum_retry_attempts       = 0
 }
 
 # renderer_compositor_main
-resource "aws_lambda_function" "rendererCompositorMain" {
-  filename      = "../choirless_lambda/pipeline/renderer_compositor_main.zip"
-  function_name = "renderer_compositor_main-${terraform.workspace}"
+module "renderer_compositor_main_lambda" {
+  source        = "./modules/lambdaPackage"
+  filename      = "renderer_compositor_main"
   role          = aws_iam_role.choirlessLambdaRole.arn
-  handler       = "renderer_compositor_main.handler"
   runtime       = "nodejs12.x"
-  timeout       = 10
-  source_code_hash = filebase64sha256("../choirless_lambda/pipeline/renderer_compositor_main.zip")
-  layers = [aws_lambda_layer_version.choirlessAPILambdaLayer.arn]
-  environment {
-    variables = {
-      COMPOSITOR_CHILD_LAMBDA = aws_lambda_function.compositorChild.function_name
-    }
+  layers        = [aws_lambda_layer_version.choirlessAPILambdaLayer.arn]
+  env_variables = {      
+      COMPOSITOR_CHILD_LAMBDA = module.renderer_compositor_child_lambda.lambdaObject.function_name
   }
   tags = var.tags
-}
-
-# If the lambda invocation fails don't keep trying
-resource "aws_lambda_function_event_invoke_config" "rendererCompositorMainInvokeConfig" {
-  function_name                = aws_lambda_function.rendererCompositorMain.function_name
-  maximum_retry_attempts       = 0
 }
