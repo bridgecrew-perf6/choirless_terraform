@@ -18,6 +18,22 @@ module "convert_format_lambda" {
   tags = var.tags
 }
 
+module "efs_cleaner_lambda" {
+  source = "./modules/vpcLambdaPackage"
+  filename = "efs_cleaner"
+  runtime = "nodejs12.x"
+  role = aws_iam_role.choirlessLambdaRole.arn
+  efs_access_point = aws_efs_access_point.choirlessEFSAP.arn
+  local_mount_path = var.mount_path
+  subnet_ids = [aws_subnet.choirlessEFSSubnet1.id, aws_subnet.choirlessEFSSubnet2.id]
+  security_group_ids = [aws_vpc.choirlessEFSVPC.default_security_group_id]
+
+  env_variables = {      
+      TMP_DIR = var.mount_path
+  }
+  tags = var.tags
+}
+
 
 resource "aws_lambda_function" "compositorChild" {
   filename      = "../choirless_lambda/pipeline/renderer_compositor_child.zip"
