@@ -90,14 +90,14 @@ module "definition_trigger" {
 module "final_parts_trigger" {
   source ="./modules/trigger"
   bucket = aws_s3_bucket.choirlessFinalParts
-  lambda = aws_lambda_function.rendererFinal
+  lambda = module.renderer_final_lambda.lambdaObject
   events = ["s3:ObjectCreated:*"]
 }
 
 module "preview_trigger" {
   source ="./modules/trigger"
   bucket = aws_s3_bucket.choirlessPreview
-  lambda = aws_lambda_function.postProduction
+  lambda = module.post_production_lambda.lambdaObject
   events = ["s3:ObjectCreated:*"]
 }
 
