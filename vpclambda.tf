@@ -34,7 +34,7 @@ module "efs_cleaner_lambda" {
 }
 
 
-module "compositor_child_lambda"  {
+module "renderer_compositor_child_lambda"  {
 
   source = "./modules/vpcLambdaPackage"
   filename = "renderer_compositor_child"
@@ -55,7 +55,7 @@ module "compositor_child_lambda"  {
   tags = var.tags
 }
 
-module "render_final_lambda"  {
+module "renderer_final_lambda"  {
 
   source = "./modules/vpcLambdaPackage"
   filename = "renderer_final"
