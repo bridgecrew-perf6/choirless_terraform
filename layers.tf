@@ -24,11 +24,3 @@ resource "aws_lambda_layer_version" "choirlessFfProbeLayer" {
   source_code_hash = filebase64sha256("../choirless_lambda/pipeline/ffprobe.zip")
   compatible_runtimes = ["python3.8","nodejs12.x"]
 }
-
-# python modules
-resource "aws_lambda_layer_version" "choirlessPythonLayer" {
-  filename   = "../choirless_lambda/pipeline/python.zip"
-  layer_name = "choirlessPythonLayer-${terraform.workspace}"
-  source_code_hash = filebase64sha256("../choirless_lambda/pipeline/python.zip")
-  compatible_runtimes = ["python3.8"]
-}

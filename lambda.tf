@@ -35,7 +35,7 @@ module "snapshot_lambda" {
   source = "./modules/lambdaPackage"
   filename = "snapshot"
   role = aws_iam_role.choirlessLambdaRole.arn
-  layers = [aws_lambda_layer_version.choirlessFfmpegLayer.arn, aws_lambda_layer_version.choirlessPythonLayer.arn]
+  layers = [aws_lambda_layer_version.choirlessFfmpegLayer.arn, aws_lambda_layer_version.choirlessAPILambdaLayer.arn]
   env_variables = {      
       DEST_BUCKET = aws_s3_bucket.choirlessSnapshot.id
       CONVERT_LAMBDA = module.convert_format_lambda.lambdaObject.function_name
@@ -48,7 +48,7 @@ module "snapshot_final_lambda" {
   source        = "./modules/lambdaPackage"
   filename      = "snapshot_final"
   role          = aws_iam_role.choirlessLambdaRole.arn
-  layers        = [aws_lambda_layer_version.choirlessFfmpegLayer.arn, aws_lambda_layer_version.choirlessPythonLayer.arn]
+  layers        = [aws_lambda_layer_version.choirlessFfmpegLayer.arn, aws_lambda_layer_version.choirlessAPILambdaLayer.arn]
   env_variables = {      
       DEST_BUCKET = aws_s3_bucket.choirlessSnapshot.id
   }
@@ -60,7 +60,7 @@ module "calculate_alignment_lambda" {
   source        = "./modules/lambdaPackage"
   filename      = "calculate_alignment"
   role          = aws_iam_role.choirlessLambdaRole.arn
-  layers        = [aws_lambda_layer_version.choirlessPythonLayer.arn]
+  layers        = [aws_lambda_layer_version.choirlessAPILambdaLayer.arn]
   env_variables = {      
       RENDERER_LAMBDA = module.renderer_lambda.lambdaObject.function_name
   }
@@ -72,7 +72,6 @@ module "renderer_lambda" {
   source        = "./modules/lambdaPackage"
   filename      = "renderer"
   role          = aws_iam_role.choirlessLambdaRole.arn
-  runtime       = "nodejs12.x"
   layers        = [aws_lambda_layer_version.choirlessAPILambdaLayer.arn]
   env_variables = {      
       DEST_BUCKET = aws_s3_bucket.choirlessDefinition.id
@@ -87,7 +86,6 @@ module "renderer_compositor_main_lambda" {
   source        = "./modules/lambdaPackage"
   filename      = "renderer_compositor_main"
   role          = aws_iam_role.choirlessLambdaRole.arn
-  runtime       = "nodejs12.x"
   layers        = [aws_lambda_layer_version.choirlessAPILambdaLayer.arn]
   env_variables = {      
       COMPOSITOR_CHILD_LAMBDA = module.renderer_compositor_child_lambda.lambdaObject.function_name

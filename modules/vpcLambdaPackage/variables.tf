@@ -1,8 +1,7 @@
 variable "filename" {}
 
 variable "runtime" {
-  default = "python3.8"
-
+  default = "nodejs12.x"
 }
 
 variable "timeout" {
