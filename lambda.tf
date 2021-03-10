@@ -13,10 +13,7 @@ resource "aws_lambda_function" "lambda" {
   
   environment {
     variables = {
-      COUCH_URL = var.COUCH_URL
-      COUCH_USERS_DATABASE = "choirless_users"
-      COUCH_RENDER_DATABASE = "choirless_render"
-      COUCH_CHOIRLESS_DATABASE = "choirless"
+      TABLE = aws_dynamodb_table.choirlessDB.name
     }
   }
   tags = var.tags

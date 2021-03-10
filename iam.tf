@@ -68,62 +68,15 @@ resource "aws_iam_role_policy" "choirlessInlinePolicy" {
 			    ]
             },
             {
-            "Action": [
-                "elastictranscoder:Read*",
-                "elastictranscoder:List*",
-                "elastictranscoder:*Job",
-                "elastictranscoder:*Preset",
-                "s3:ListAllMyBuckets",
-                "s3:ListBucket",
-                "iam:ListRoles",
-                "sns:ListTopics"
-            ],
-            "Effect": "Allow",
-            "Resource": "*"
-            },
-            {
-            "Effect": "Allow",
-            "Action": [
-                "ec2:CreateNetworkInterface",
-                "ec2:DeleteNetworkInterface",
-                "ec2:DescribeNetworkInterfaces"
-            ],
-            "Resource": "*"
+                "Effect": "Allow",
+                "Action": [ "dynamodb:*" ],
+                "Resource": ["arn:aws:dynamodb:*:*:table/*"]
             }
 
         ]
   }
   EOF
 }
-
-resource "aws_iam_role" "choirlessTranscoderRole" {
-  name = "choirlessTranscoderRole-${terraform.workspace}"
-
-  assume_role_policy = <<EOF
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Action": "sts:AssumeRole",
-      "Principal": {
-        "Service": "elastictranscoder.amazonaws.com"
-      },
-      "Effect": "Allow",
-      "Sid": ""
-    }
-  ]
-}
-EOF
-
-  tags = var.tags
-}
-
-resource "aws_iam_role_policy_attachment" "elasticTranscoderPolicy" {
-
-   role = aws_iam_role.choirlessTranscoderRole.name
-   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonElasticTranscoderRole"
-}
-
 
 #this policy grants access to mount and write to the EFS file system
 
