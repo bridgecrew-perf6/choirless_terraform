@@ -183,38 +183,40 @@ resource "aws_iam_role" "choirless_cognito_admin" {
 EOF
 }
 
+
+data "aws_iam_policy_document" "cognito_admin_policy" {
+  statement {
+    effect = "Allow"
+
+    actions = [
+      "mobileanalytics:PutEvents",
+      "cognito-sync:*",
+      "cognito-identity:*"
+    ]
+
+    resources = [
+      "*"
+    ]
+  }
+  statement {
+    effect = "Allow"
+    actions = [
+      "lambda:InvokeFunction"
+    ]
+
+    resources = [
+      for id in var.api_methods :
+      aws_lambda_function.lambda[id].arn
+    ]
+  }
+}
+
+
+
 resource "aws_iam_role_policy" "cognito_admin_policy" {
   name = "cognito_admin_policy"
   role = aws_iam_role.choirless_cognito_admin.id
-
-  policy = <<EOF
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Action": [
-        "mobileanalytics:PutEvents",
-        "cognito-sync:*",
-        "cognito-identity:*"
-      ],
-      "Resource": [
-        "*"
-      ]
-    },
-    {
-      "Effect": "Allow",
-      "Action": [
-          "lambda:InvokeFunction"
-      ],
-      "Resource": [
-          "${aws_lambda_function.lambda["getChoirSongParts"].arn}",
-          "${aws_lambda_function.lambda["getUserChoirs"].arn}"
-      ]
-  }
-  ]
-}
-EOF
+  policy = data.aws_iam_policy_document.cognito_admin_policy.json
 }
 
 //attach the role to the identity pool
