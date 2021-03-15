@@ -208,7 +208,8 @@ resource "aws_iam_role_policy" "cognito_admin_policy" {
           "lambda:InvokeFunction"
       ],
       "Resource": [
-          "${aws_lambda_function.lambda["getChoirSongParts"].arn}"
+          "${aws_lambda_function.lambda["getChoirSongParts"].arn}",
+          "${aws_lambda_function.lambda["getUserChoirs"].arn}"
       ]
   }
   ]
